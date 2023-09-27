@@ -11,7 +11,7 @@
 // @license     MIT
 // ==/UserScript==
 
-function run() {
+function calculate() {
 	if (!document.querySelector(".ic-app-main-content")) {
 		console.error("Not on Canvas!");
 		return;
@@ -88,7 +88,7 @@ function run() {
 
 	let grade = 0;
 	if (Object.entries(weights).length !== 0) {
-		for (const category in weights) {
+		for (const category in weightedPerGroup) {
 			grade += weightedPerGroup[category] * weights[category];
 		}
 	} else {
@@ -110,12 +110,12 @@ function run() {
 }
 
 if (document.querySelector("#student-grades-final")) {
-	const observer = new MutationObserver(run);
+	const observer = new MutationObserver(calculate);
 
 	observer.observe(document.getElementById("grades_summary"), {
 		childList: true,
 		subtree: true,
 	});
 
-	run();
+	calculate();
 }
