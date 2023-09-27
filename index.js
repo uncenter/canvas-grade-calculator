@@ -6,7 +6,7 @@
 // @grant       none
 // @downloadURL https://github.com/uncenter/canvas-grade-calculator/raw/main/index.js
 // @homepageURL https://github.com/uncenter/canvas-grade-calculator
-// @version     0.1.0
+// @version     0.2.0
 // @author      uncenter
 // @license     MIT
 // ==/UserScript==
