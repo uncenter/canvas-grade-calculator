@@ -101,11 +101,21 @@ function run() {
 		`${grade.toFixed(2)}% across ${assignments.length} graded assignments.`
 	);
 
-	document.querySelector(
-		"#student-grades-final"
+	(
+		document.querySelector("#student-grades-final") ||
+		document.querySelector(".student_assignment.final_grade")
 	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${grade.toFixed(
 		2
 	)}%</span></div>`;
 }
 
-run();
+if (document.querySelector("#student-grades-final")) {
+	const observer = new MutationObserver(run);
+
+	observer.observe(document.getElementById("grades_summary"), {
+		childList: true,
+		subtree: true,
+	});
+
+	run();
+}
