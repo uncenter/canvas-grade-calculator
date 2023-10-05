@@ -58,6 +58,9 @@ function calculate() {
 					break;
 				}
 			}
+			if (typeof earned !== 'number' || Number.isNaN(earned)) {
+				return;
+			}
 			available = parseFloat(
 				grades.nextElementSibling.textContent.replace("/", "").trim()
 			);
