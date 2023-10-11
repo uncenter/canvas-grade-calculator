@@ -24,55 +24,54 @@ function calculate() {
 
 	const weights = {};
 
-	document
-		.querySelectorAll('[aria-label="Assignment Weights"] > table tbody > tr')
-		.forEach((e) => {
-			const group = e.querySelector("th").textContent;
-			if (group === "Total") return;
-			const weight =
-				parseFloat(e.querySelector("td").textContent.slice(0, 2)) / 100;
-			weights[group] = weight;
-		});
+	for (const element of document.querySelectorAll(
+		'[aria-label="Assignment Weights"] > table tbody > tr'
+	)) {
+		const group = element.querySelector("th").textContent;
+		if (group === "Total") continue;
+		const weight =
+			Number.parseFloat(element.querySelector("td").textContent.slice(0, 2)) /
+			100;
+		weights[group] = weight;
+	}
 
 	const assignments = [];
 
-	document
-		.querySelectorAll("#grades_summary tr.assignment_graded.student_assignment")
-		.forEach((e) => {
-			let earned, available, title, group;
+	for (const element of document.querySelectorAll(
+		"#grades_summary tr.assignment_graded.student_assignment"
+	)) {
+		let earned, available, title, group;
 
-			const a = e.querySelector("th.title");
-			title = a.querySelector("a").textContent;
-			group = a.querySelector("div.context").textContent;
+		const a = element.querySelector("th.title");
+		title = a.querySelector("a").textContent;
+		group = a.querySelector("div.context").textContent;
+		const grades = element.querySelector(
+			"td.assignment_score > div > span.tooltip > span.grade"
+		);
 
-			const grades = e.querySelector(
-				"td.assignment_score > div > span.tooltip > span.grade"
-			);
-			for (let i = 0; i < grades.childNodes.length; i++) {
-				const node = grades.childNodes[i];
-				if (
-					node.nodeType === Node.TEXT_NODE &&
-					node.textContent.trim() !== ""
-				) {
-					earned = parseFloat(node.textContent.trim());
-					break;
-				}
-			}
-			if (typeof earned !== 'number' || Number.isNaN(earned)) {
-				return;
-			}
-			available = parseFloat(
-				grades.nextElementSibling.textContent.replace("/", "").trim()
-			);
+		earned = Number.parseFloat(
+			[...grades.childNodes]
+				.find(
+					(node) =>
+						node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ""
+				)
+				?.textContent.trim()
+		);
+		if (typeof earned !== "number" || Number.isNaN(earned)) continue;
 
-			assignments.push({ earned, available, title, group });
-		});
+		available = Number.parseFloat(
+			grades.nextElementSibling.textContent.replace("/", "").trim()
+		);
+
+		assignments.push({ earned, available, title, group });
+	}
 
 	if (assignments.length === 0) {
 		console.warn("No graded assignments found!");
 		return;
 	}
 
+	/* eslint-disable unicorn/prevent-abbreviations, unicorn/no-array-reduce */
 	const totalsPerGroup = assignments.reduce(
 		(acc, { group, earned, available }) => {
 			acc[group] = acc[group] || { totalEarned: 0, totalAvailable: 0 };
@@ -82,22 +81,26 @@ function calculate() {
 		},
 		{}
 	);
+	/* eslint-enable */
 
 	const weightedPerGroup = {};
 	for (const category in totalsPerGroup) {
 		const { totalEarned, totalAvailable } = totalsPerGroup[category];
-		weightedPerGroup[category] = (totalEarned / totalAvailable) * 100 || null;
+		weightedPerGroup[category] =
+			(totalEarned / totalAvailable) * 100 || undefined;
 	}
 
 	let grade = 0;
-	if (Object.entries(weights).length !== 0) {
+	if (Object.entries(weights).length === 0) {
+		console.log("Categories are not weighted.");
+		const scores = Object.values(weightedPerGroup).filter(
+			(x) => x !== undefined
+		);
+		grade = scores.reduce((total, score) => total + score, 0) / scores.length;
+	} else {
 		for (const category in weightedPerGroup) {
 			grade += weightedPerGroup[category] * weights[category];
 		}
-	} else {
-		console.log("Categories are not weighted.");
-		const scores = Object.values(weightedPerGroup).filter((x) => x !== null);
-		grade = scores.reduce((total, score) => total + score, 0) / scores.length;
 	}
 
 	console.log(
@@ -115,7 +118,7 @@ function calculate() {
 if (document.querySelector("#student-grades-final")) {
 	const observer = new MutationObserver(calculate);
 
-	observer.observe(document.getElementById("grades_summary"), {
+	observer.observe(document.querySelector("#grades_summary"), {
 		childList: true,
 		subtree: true,
 	});
