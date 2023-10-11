@@ -152,4 +152,11 @@ function calculate() {
 	document.querySelector("#grades_summary tbody").append(temporary);
 }
 
+// TODO: Don't observe elements edited by the script (infinite loop!).
+
+// observer.observe(document.querySelector("#grades_summary"), {
+//     childList: true,
+//     subtree: true,
+// });
+
 calculate();
