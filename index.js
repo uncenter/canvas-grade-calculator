@@ -16,7 +16,6 @@ function calculate() {
 		console.error("Not on Canvas!");
 		return;
 	}
-
 	if (!document.querySelector("#grade-summary-content")) {
 		console.error("Not on grades page!");
 		return;
@@ -24,6 +23,7 @@ function calculate() {
 
 	const weights = {};
 
+	// Scrape weights table for category/group names and percentages.
 	for (const element of document.querySelectorAll(
 		'[aria-label="Assignment Weights"] > table tbody > tr'
 	)) {
@@ -37,6 +37,7 @@ function calculate() {
 
 	const assignments = [];
 
+	// Scrape assignments table for graded assignments.
 	for (const element of document.querySelectorAll(
 		"#grades_summary tr.assignment_graded.student_assignment"
 	)) {
@@ -72,6 +73,7 @@ function calculate() {
 	}
 
 	/* eslint-disable unicorn/prevent-abbreviations, unicorn/no-array-reduce */
+	// Convert assignments array into an object of type { [category]: { totalEarned: number, totalAvailable: number }].
 	const totalsPerGroup = assignments.reduce(
 		(acc, { group, earned, available }) => {
 			acc[group] = acc[group] || { totalEarned: 0, totalAvailable: 0 };
@@ -83,23 +85,26 @@ function calculate() {
 	);
 	/* eslint-enable */
 
-	const weightedPerGroup = {};
+	// Take per-group totals and conver them into percentage values.
+	const groupPercentages = {};
 	for (const category in totalsPerGroup) {
 		const { totalEarned, totalAvailable } = totalsPerGroup[category];
-		weightedPerGroup[category] =
+		groupPercentages[category] =
 			(totalEarned / totalAvailable) * 100 || undefined;
 	}
 
 	let grade = 0;
 	if (Object.entries(weights).length === 0) {
+		// No weights, so we can just take an array of percentages, filter undef values, and average to get the grade.
 		console.log("Categories are not weighted.");
-		const scores = Object.values(weightedPerGroup).filter(
+		const scores = Object.values(groupPercentages).filter(
 			(x) => x !== undefined
 		);
 		grade = scores.reduce((total, score) => total + score, 0) / scores.length;
 	} else {
-		for (const category in weightedPerGroup) {
-			grade += weightedPerGroup[category] * weights[category];
+		// Weights, so multiply each group's percentage by that group's weight and add to total.
+		for (const category in groupPercentages) {
+			grade += groupPercentages[category] * weights[category];
 		}
 	}
 
@@ -107,21 +112,44 @@ function calculate() {
 		`${grade.toFixed(2)}% across ${assignments.length} graded assignments.`
 	);
 
+	// Replace the "Calculation of totals has been disabled" message with the calculated grade.
 	(
 		document.querySelector("#student-grades-final") ||
 		document.querySelector(".student_assignment.final_grade")
 	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${grade.toFixed(
 		2
 	)}%</span></div>`;
+
+	// Add the group totals and percentages to each respective group section at the bottom of the table.
+	for (const element of document.querySelectorAll(
+		"#grades_summary .student_assignment.hard_coded.group_total"
+	)) {
+		const group = element.querySelector("th.title").textContent.trim();
+
+		element.querySelector(
+			"td.assignment_score .tooltip > .grade"
+		).innerHTML = `<span class="grade">${groupPercentages[group].toFixed(
+			2
+		)}%</span>`;
+
+		const { totalEarned, totalAvailable } = totalsPerGroup[group];
+
+		element.querySelector(
+			"td.details"
+		).innerHTML = `<span class="possible points_possible" aria-label="">${totalEarned.toFixed(
+			2
+		)} / ${totalAvailable.toFixed(2)}</span>`;
+	}
+
+	// Create and append the total section to the bottom of the table.
+	const temporary = document.createElement("tr");
+	temporary.className =
+		"student_assignment hard_coded final_grade feedback_visibility_ff";
+	temporary.id = "submission_final-grade";
+	temporary.innerHTML = `<th class=title scope=row>Total<td class=due><td class=status scope=row><td class=assignment_score><div style=position:relative;height:100% class=score_holder><span class=assignment_presenter_for_submission style=display:none></span> <span class=react_pill_container></span> <span class=tooltip><span class=grade>${grade.toFixed(
+		2
+	)}%</span></span><div style=display:none><span class=original_points></span><span class=original_score></span><span class=what_if_score></span><span class=student_entered_score></span> <span class=submission_status>none </span><span class=assignment_group_id></span> <span class=assignment_id>final-grade</span> <span class=group_weight></span> <span class=rules></span></div></div><td class=details><span class="points_possible possible"aria-label=""></span>`;
+	document.querySelector("#grades_summary tbody").append(temporary);
 }
 
-if (document.querySelector("#student-grades-final")) {
-	const observer = new MutationObserver(calculate);
-
-	observer.observe(document.querySelector("#grades_summary"), {
-		childList: true,
-		subtree: true,
-	});
-
-	calculate();
-}
+calculate();
