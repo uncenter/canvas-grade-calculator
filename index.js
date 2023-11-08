@@ -46,23 +46,32 @@ function calculate() {
 		const a = element.querySelector("th.title");
 		title = a.querySelector("a").textContent;
 		group = a.querySelector("div.context").textContent;
+
 		const grades = element.querySelector(
 			"td.assignment_score > div > span.tooltip > span.grade"
 		);
 
-		earned = Number.parseFloat(
-			[...grades.childNodes]
-				.find(
-					(node) =>
-						node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ""
-				)
-				?.textContent.trim()
-		);
-		if (typeof earned !== "number" || Number.isNaN(earned)) continue;
+		const score = [...grades.childNodes]
+			.find(
+				(node) =>
+					node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ""
+			)
+			?.textContent.trim();
 
-		available = Number.parseFloat(
-			grades.nextElementSibling.textContent.replace("/", "").trim()
-		);
+		if (
+			score.includes("%") ||
+			!grades.nextElementSibling.textContent.includes("/")
+		) {
+			earned = Number.parseFloat(score.replace("%", ""));
+			available = 100;
+		} else {
+			earned = Number.parseFloat(score);
+			if (typeof earned !== "number" || Number.isNaN(earned)) continue;
+
+			available = Number.parseFloat(
+				grades.nextElementSibling.textContent.replace("/", "").trim()
+			);
+		}
 
 		assignments.push({ earned, available, title, group });
 	}
@@ -155,11 +164,19 @@ function calculate() {
 	document.querySelector("#grades_summary tbody").append(temporary);
 }
 
-// TODO: Don't observe elements edited by the script (infinite loop!).
+// const observer = new MutationObserver(calculate);
 
-// observer.observe(document.querySelector("#grades_summary"), {
-// 	childList: true,
-// 	subtree: true,
-// });
+// if (document.querySelector("#student-grades-final") || true) {
+// 	for (const el of document.querySelectorAll(
+// 		"#grades_summary tr.assignment_graded.student_assignment"
+// 	)) {
+// 		observer.observe(el, {
+// 			childList: true,
+// 			subtree: true,
+// 		});
+// 	}
+
+// 	calculate();
+// }
 
 calculate();
