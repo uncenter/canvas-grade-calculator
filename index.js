@@ -25,7 +25,7 @@ function calculate() {
 	const weights = {};
 
 	for (const element of document.querySelectorAll(
-		'[aria-label="Assignment Weights"] > table tbody > tr',
+		'[aria-label="Assignment Weights"] > table tbody > tr'
 	)) {
 		const group = element.querySelector('th').textContent;
 		if (group === 'Total') continue;
@@ -38,7 +38,7 @@ function calculate() {
 	const assignments = [];
 
 	for (const element of document.querySelectorAll(
-		'#grades_summary tr.assignment_graded.student_assignment',
+		'#grades_summary tr.assignment_graded.student_assignment'
 	)) {
 		let earned, available, title, group;
 
@@ -46,21 +46,21 @@ function calculate() {
 		title = a.querySelector('a').textContent;
 		group = a.querySelector('div.context').textContent;
 		const grades = element.querySelector(
-			'td.assignment_score > div > span.tooltip > span.grade',
+			'td.assignment_score > div > span.tooltip > span.grade'
 		);
 
 		earned = Number.parseFloat(
 			[...grades.childNodes]
 				.find(
 					(node) =>
-						node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== '',
+						node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ''
 				)
-				?.textContent.trim(),
+				?.textContent.trim()
 		);
 		if (typeof earned !== 'number' || Number.isNaN(earned)) continue;
 
 		available = Number.parseFloat(
-			grades.nextElementSibling.textContent.replace('/', '').trim(),
+			grades.nextElementSibling.textContent.replace('/', '').trim()
 		);
 
 		assignments.push({ earned, available, title, group });
@@ -79,7 +79,7 @@ function calculate() {
 			acc[group].totalAvailable += available;
 			return acc;
 		},
-		{},
+		{}
 	);
 	/* eslint-enable */
 
@@ -94,7 +94,7 @@ function calculate() {
 	if (Object.entries(weights).length === 0) {
 		console.log('Categories are not weighted.');
 		const scores = Object.values(weightedPerGroup).filter(
-			(x) => x !== undefined,
+			(x) => x !== undefined
 		);
 		grade = scores.reduce((total, score) => total + score, 0) / scores.length;
 	} else {
@@ -104,14 +104,14 @@ function calculate() {
 	}
 
 	console.log(
-		`${grade.toFixed(2)}% across ${assignments.length} graded assignments.`,
+		`${grade.toFixed(2)}% across ${assignments.length} graded assignments.`
 	);
 
 	(
 		document.querySelector('#student-grades-final') ||
 		document.querySelector('.student_assignment.final_grade')
 	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${grade.toFixed(
-		2,
+		2
 	)}%</span></div>`;
 }
 
