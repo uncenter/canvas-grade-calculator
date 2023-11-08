@@ -95,12 +95,15 @@ function calculate() {
 
 	let grade = 0;
 	if (Object.entries(weights).length === 0) {
-		// No weights, so we can just take an array of percentages, filter undef values, and average to get the grade.
+		// No weights, so we can just take total earned and available combined from all groups and get the percentage.
 		console.log("Categories are not weighted.");
-		const scores = Object.values(groupPercentages).filter(
-			(x) => x !== undefined
-		);
-		grade = scores.reduce((total, score) => total + score, 0) / scores.length;
+		let totalAvailable = 0;
+		let totalEarned = 0;
+		for (const group of Object.values(totalsPerGroup)) {
+			totalEarned += group.totalEarned;
+			totalAvailable += group.totalAvailable;
+		}
+		grade = (totalEarned / totalAvailable) * 100;
 	} else {
 		// Weights, so multiply each group's percentage by that group's weight and add to total.
 		for (const category in groupPercentages) {
@@ -155,8 +158,8 @@ function calculate() {
 // TODO: Don't observe elements edited by the script (infinite loop!).
 
 // observer.observe(document.querySelector("#grades_summary"), {
-//     childList: true,
-//     subtree: true,
+// 	childList: true,
+// 	subtree: true,
 // });
 
 calculate();
