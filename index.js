@@ -45,23 +45,32 @@ function calculate() {
 		const a = element.querySelector('th.title');
 		title = a.querySelector('a').textContent;
 		group = a.querySelector('div.context').textContent;
+
 		const grades = element.querySelector(
 			'td.assignment_score > div > span.tooltip > span.grade'
 		);
 
-		earned = Number.parseFloat(
-			[...grades.childNodes]
-				.find(
-					(node) =>
-						node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ''
-				)
-				?.textContent.trim()
-		);
-		if (typeof earned !== 'number' || Number.isNaN(earned)) continue;
+		const score = [...grades.childNodes]
+			.find(
+				(node) =>
+					node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ''
+			)
+			?.textContent.trim();
 
-		available = Number.parseFloat(
-			grades.nextElementSibling.textContent.replace('/', '').trim()
-		);
+		if (
+			score.includes('%') ||
+			!grades.nextElementSibling.textContent.includes('/')
+		) {
+			earned = Number.parseFloat(score.replace('%', ''));
+			available = 100;
+		} else {
+			earned = Number.parseFloat(score);
+			if (typeof earned !== 'number' || Number.isNaN(earned)) continue;
+
+			available = Number.parseFloat(
+				grades.nextElementSibling.textContent.replace('/', '').trim()
+			);
+		}
 
 		assignments.push({ earned, available, title, group });
 	}
@@ -92,11 +101,15 @@ function calculate() {
 
 	let grade = 0;
 	if (Object.entries(weights).length === 0) {
+		// No weights, so we can just take total earned and available combined from all groups and get the percentage.
 		console.log('Categories are not weighted.');
-		const scores = Object.values(weightedPerGroup).filter(
-			(x) => x !== undefined
-		);
-		grade = scores.reduce((total, score) => total + score, 0) / scores.length;
+		let totalAvailable = 0;
+		let totalEarned = 0;
+		for (const group of Object.values(totalsPerGroup)) {
+			totalEarned += group.totalEarned;
+			totalAvailable += group.totalAvailable;
+		}
+		grade = (totalEarned / totalAvailable) * 100;
 	} else {
 		for (const category in weightedPerGroup) {
 			grade += weightedPerGroup[category] * weights[category];
