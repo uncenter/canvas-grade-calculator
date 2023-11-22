@@ -93,16 +93,15 @@ function calculate() {
 	/* eslint-enable */
 
 	const weightedPerGroup = {};
-	for (const category in totalsPerGroup) {
-		const { totalEarned, totalAvailable } = totalsPerGroup[category];
-		weightedPerGroup[category] =
-			(totalEarned / totalAvailable) * 100 || undefined;
+	for (const group in totalsPerGroup) {
+		const { totalEarned, totalAvailable } = totalsPerGroup[group];
+		weightedPerGroup[group] = (totalEarned / totalAvailable) * 100 || undefined;
 	}
 
 	let grade = 0;
 	if (Object.entries(weights).length === 0) {
 		// No weights, so we can just take total earned and available combined from all groups and get the percentage.
-		console.log('Categories are not weighted.');
+		console.log('Assignment groups / categories are not weighted.');
 		let totalAvailable = 0;
 		let totalEarned = 0;
 		for (const group of Object.values(totalsPerGroup)) {
@@ -111,8 +110,8 @@ function calculate() {
 		}
 		grade = (totalEarned / totalAvailable) * 100;
 	} else {
-		for (const category in weightedPerGroup) {
-			grade += weightedPerGroup[category] * weights[category];
+		for (const group in weights) {
+			grade += (weightedPerGroup[group] || 100) * weights[group];
 		}
 	}
 
