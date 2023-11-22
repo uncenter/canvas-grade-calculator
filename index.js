@@ -132,6 +132,37 @@ function apply(grade) {
 		document.querySelector('#student-grades-final') ||
 		document.querySelector('.student_assignment.final_grade')
 	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${grade}%</span></div>`;
+
+	// Add the group totals and percentages to each respective group section at the bottom of the table.
+	for (const element of document.querySelectorAll(
+		'#grades_summary .student_assignment.hard_coded.group_total'
+	)) {
+		const group = element.querySelector('th.title').textContent.trim();
+
+		element.querySelector(
+			'td.assignment_score .tooltip > .grade'
+		).innerHTML = `<span class="grade">${groupPercentages[group].toFixed(
+			2
+		)}%</span>`;
+
+		const { totalEarned, totalAvailable } = totalsPerGroup[group];
+
+		element.querySelector(
+			'td.details'
+		).innerHTML = `<span class="possible points_possible" aria-label="">${totalEarned.toFixed(
+			2
+		)} / ${totalAvailable.toFixed(2)}</span>`;
+	}
+
+	// Create and append the total section to the bottom of the table.
+	const temporary = document.createElement('tr');
+	temporary.className =
+		'student_assignment hard_coded final_grade feedback_visibility_ff';
+	temporary.id = 'submission_final-grade';
+	temporary.innerHTML = `<th class=title scope=row>Total<td class=due><td class=status scope=row><td class=assignment_score><div style=position:relative;height:100% class=score_holder><span class=assignment_presenter_for_submission style=display:none></span> <span class=react_pill_container></span> <span class=tooltip><span class=grade>${grade.toFixed(
+		2
+	)}%</span></span><div style=display:none><span class=original_points></span><span class=original_score></span><span class=what_if_score></span><span class=student_entered_score></span> <span class=submission_status>none </span><span class=assignment_group_id></span> <span class=assignment_id>final-grade</span> <span class=group_weight></span> <span class=rules></span></div></div><td class=details><span class="points_possible possible"aria-label=""></span>`;
+	document.querySelector('#grades_summary tbody').append(temporary);
 }
 
 function log({ grade, assignments }) {
