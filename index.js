@@ -110,9 +110,12 @@ function calculate() {
 		}
 		grade = (totalEarned / totalAvailable) * 100;
 	} else {
-		for (const group in weights) {
-			grade += (weightedPerGroup[group] || 100) * weights[group];
+		let totalWeights = 0;
+		for (const group in weightedPerGroup) {
+			grade += weightedPerGroup[group] * weights[group];
+			totalWeights += weights[group];
 		}
+		grade = grade / totalWeights;
 	}
 
 	return { grade: grade.toFixed(2), assignments };
