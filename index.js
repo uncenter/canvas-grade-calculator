@@ -24,6 +24,7 @@ function calculate() {
 
 	const weights = {};
 
+	// Scrape weights table for category/group names and percentages.
 	for (const element of document.querySelectorAll(
 		'[aria-label="Assignment Weights"] > table tbody > tr'
 	)) {
@@ -37,6 +38,7 @@ function calculate() {
 
 	const assignments = [];
 
+	// Scrape assignments table for graded assignments.
 	for (const element of document.querySelectorAll(
 		'#grades_summary tr.assignment_graded.student_assignment'
 	)) {
@@ -81,6 +83,7 @@ function calculate() {
 	}
 
 	/* eslint-disable unicorn/prevent-abbreviations, unicorn/no-array-reduce */
+	// Convert assignments array into an object of type { [category]: { totalEarned: number, totalAvailable: number }].
 	const totalsPerGroup = assignments.reduce(
 		(acc, { group, earned, available }) => {
 			acc[group] = acc[group] || { totalEarned: 0, totalAvailable: 0 };
@@ -92,10 +95,11 @@ function calculate() {
 	);
 	/* eslint-enable */
 
-	const weightedPerGroup = {};
+	// Convert available out of total for each group into percentage values.
+	const groupPercentages = {};
 	for (const group in totalsPerGroup) {
 		const { totalEarned, totalAvailable } = totalsPerGroup[group];
-		weightedPerGroup[group] = (totalEarned / totalAvailable) * 100 || undefined;
+		groupPercentages[group] = (totalEarned / totalAvailable) * 100 || undefined;
 	}
 
 	let grade = 0;
@@ -110,9 +114,10 @@ function calculate() {
 		}
 		grade = (totalEarned / totalAvailable) * 100;
 	} else {
+		// Weights, so multiply each group's percentage by that group's weight and add to total, while keeping in mind that with some groups lacking assignments not all weights will be used (so use sum of weights given as denominator).
 		let totalWeights = 0;
-		for (const group in weightedPerGroup) {
-			grade += weightedPerGroup[group] * weights[group];
+		for (const group in groupPercentages) {
+			grade += groupPercentages[group] * weights[group];
 			totalWeights += weights[group];
 		}
 		grade = grade / totalWeights;
@@ -122,6 +127,7 @@ function calculate() {
 }
 
 function apply(grade) {
+	// Replace the "Calculation of totals has been disabled" message with the calculated grade.
 	(
 		document.querySelector('#student-grades-final') ||
 		document.querySelector('.student_assignment.final_grade')
