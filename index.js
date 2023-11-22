@@ -116,25 +116,38 @@ function calculate() {
 		}
 	}
 
-	console.log(
-		`${grade.toFixed(2)}% across ${assignments.length} graded assignments.`
-	);
+	return { grade: grade.toFixed(2), assignments };
+}
 
+function apply(grade) {
 	(
 		document.querySelector('#student-grades-final') ||
 		document.querySelector('.student_assignment.final_grade')
-	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${grade.toFixed(
-		2
-	)}%</span></div>`;
+	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${grade}%</span></div>`;
+}
+
+function log({ grade, assignments }) {
+	console.log(`${grade}% across ${assignments.length} graded assignments.`);
+}
+
+function run() {
+	const result = calculate();
+	if (result) {
+		log(result);
+		apply(result.grade);
+	}
 }
 
 if (document.querySelector('#student-grades-final')) {
-	const observer = new MutationObserver(calculate);
+	const observer = new MutationObserver(run);
 
 	observer.observe(document.querySelector('#grades_summary'), {
 		childList: true,
 		subtree: true,
 	});
 
-	calculate();
+	run();
+} else {
+	const result = calculate();
+	if (result) log(result);
 }
