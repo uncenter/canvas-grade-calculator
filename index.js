@@ -190,20 +190,3 @@ if (document.querySelector('#student-grades-final')) {
 	const result = calculate();
 	if (result) log(result);
 }
-
-// const observer = new MutationObserver(calculate);
-
-// if (document.querySelector("#student-grades-final") || true) {
-// 	for (const el of document.querySelectorAll(
-// 		"#grades_summary tr.assignment_graded.student_assignment"
-// 	)) {
-// 		observer.observe(el, {
-// 			childList: true,
-// 			subtree: true,
-// 		});
-// 	}
-
-// 	calculate();
-// }
-
-calculate();
