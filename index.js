@@ -49,7 +49,7 @@ function parseCanvasDate(input) {
 		Number.parseInt(hour) +
 			(period === 'pm' && Number.parseInt(hour) !== 12 ? 12 : 0),
 		Number.parseInt(minute)
-	);
+	).getTime();
 }
 
 function toKebabCase(string) {
@@ -134,7 +134,10 @@ function getAssignments() {
 			'td.assignment_score > div > span.tooltip > span.grade'
 		);
 
-		if (grades.querySelector('.graded_icon.icon-check')) {
+		if (
+			grades.querySelector('.graded_icon') ||
+			grades.querySelector('.submission_icon')
+		) {
 			continue;
 		}
 
