@@ -233,31 +233,11 @@ function calculate() {
 	return { grade: grade.toFixed(2), assignments };
 }
 
-function apply(grade) {
-	// Replace the "Calculation of totals has been disabled" message with the calculated grade.
-	(
-		document.querySelector('#student-grades-final') ||
-		document.querySelector('.student_assignment.final_grade')
-	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${grade}%</span></div>`;
-}
-
-function log({ grade, assignments }) {
-	console.log(`${grade}% across ${assignments.length} graded assignments.`);
-}
-
 function exportAndDownloadAssignments(assignments) {
 	const course = document.querySelector('#course_select_menu').value;
 	const prefix = toKebabCase(course) + '-assignments.';
 	downloadFile(JSON.stringify(assignments), prefix + 'json');
 	downloadFile(stringifyCsv(assignments), prefix + 'csv');
-}
-
-function run() {
-	const result = calculate();
-	if (result) {
-		log(result);
-		apply(result.grade);
-	}
 }
 
 if (!document.querySelector('.ic-app-main-content')) {
@@ -267,21 +247,12 @@ if (!document.querySelector('#grade-summary-content')) {
 	throw new Error('Not on grades page!');
 }
 
-if (document.querySelector('#student-grades-final')) {
-	const observer = new MutationObserver(run);
-
-	observer.observe(document.querySelector('#grades_summary'), {
-		childList: true,
-		subtree: true,
-	});
-
-	run();
-} else {
-	const result = calculate();
-	if (result) {
-		log(result);
-		if (confirm('Export assignments?')) {
-			exportAndDownloadAssignments(result.assignments);
-		}
+const result = calculate();
+if (result) {
+	alert(
+		`${result.grade}% across ${result.assignments.length} graded assignments.`
+	);
+	if (confirm('Export assignments?')) {
+		exportAndDownloadAssignments(result.assignments);
 	}
 }
