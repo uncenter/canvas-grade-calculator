@@ -59,27 +59,6 @@ function toKebabCase(string) {
 		.replaceAll(/[^\da-z-]+/g, '');
 }
 
-function stringifyCsv(data) {
-	if (data.length === 0) return '';
-
-	const keys = Object.keys(data[0]);
-	const rows = [];
-
-	rows.push(keys.join(','));
-
-	for (const row of data) {
-		const values = keys.map((key) => {
-			const value = row[key];
-			return typeof value === 'string'
-				? `"${value.replaceAll('"', '""')}"`
-				: value;
-		});
-		rows.push(values.join(','));
-	}
-
-	return rows.join('\n');
-}
-
 function downloadFile(data, filename) {
 	const blob = new Blob([data], { type: 'text/plain' });
 	const link = document.createElement('a');
@@ -170,14 +149,34 @@ function getAssignments() {
 				)
 				.getAttribute('style') === 'visibility: hidden;';
 
+		const comments = [];
+		const table =
+			assignment.nextElementSibling.nextElementSibling.nextElementSibling.querySelector(
+				'td > table > tbody'
+			);
+		if (table) {
+			for (const element of table.querySelectorAll('tr')) {
+				let [comment, details] = element.querySelectorAll('td');
+				let text = comment.querySelector('span').textContent;
+				let [name, ...date] = details.textContent.trim().split(',');
+				date = parseCanvasDate(date.join(',').trim());
+				comments.push({
+					text,
+					name: name.trim(),
+					date,
+				});
+			}
+		}
+
 		assignments.push({
 			earned,
 			available,
+			countsTowardFinalGrade,
 			title,
 			group,
 			due,
 			submitted,
-			countsTowardFinalGrade,
+			comments,
 		});
 	}
 
@@ -238,9 +237,10 @@ function calculate() {
 
 function exportAndDownloadAssignments(assignments) {
 	const course = document.querySelector('#course_select_menu').value;
-	const prefix = toKebabCase(course) + '-assignments.';
-	downloadFile(JSON.stringify(assignments), prefix + 'json');
-	downloadFile(stringifyCsv(assignments), prefix + 'csv');
+	downloadFile(
+		JSON.stringify(assignments),
+		toKebabCase(course) + '-assignments.json'
+	);
 }
 
 if (!document.querySelector('.ic-app-main-content')) {
