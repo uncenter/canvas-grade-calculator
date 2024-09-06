@@ -6,6 +6,9 @@
 		"unicorn/no-useless-undefined": ["error", { "checkArguments": false }],
 		"unicorn/text-encoding-identifier-case": 0
 	},
+	"globals": {
+		"GM_registerMenuCommand": true
+	},
 	"env": {
 		"browser": true
 	}
