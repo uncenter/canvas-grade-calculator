@@ -224,12 +224,9 @@ function calculate() {
 		grade = (totalEarned / totalAvailable) * 100;
 	} else {
 		// Weights, so multiply each group's percentage by that group's weight and add to total, while keeping in mind that with some groups lacking assignments not all weights will be used (so use sum of weights given as denominator).
-		let totalWeights = 0;
-		for (const group in groupPercentages) {
-			grade += groupPercentages[group] * weights[group];
-			totalWeights += weights[group];
+		for (const group in weights) {
+			grade += (groupPercentages[group] || 100) * weights[group];
 		}
-		grade = grade / totalWeights;
 	}
 
 	return { grade: grade.toFixed(2), assignments };
@@ -252,9 +249,11 @@ if (!document.querySelector('#grade-summary-content')) {
 
 const result = calculate();
 if (result) {
-	alert(
-		`${result.grade}% across ${result.assignments.length} graded assignments.`
-	);
+	console.log(result);
+	(
+		document.querySelector('#student-grades-final') ||
+		document.querySelector('.student_assignment.final_grade')
+	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${result.grade}%</span></div>`;
 	if (confirm('Export assignments?')) {
 		exportAndDownloadAssignments(result.assignments);
 	}
