@@ -6,7 +6,7 @@ Calculate grade totals and export your assignments data for Canvas courses.
 
 ## Features
 
-- 🚫 Bypasses the "Calculation of totals has been disabled" text by replacing it with your actual grade, accurately calculated to match Canvas grading.[^1]
+- 📝 Bypasses the "Calculation of totals has been disabled" text by replacing it with your actual grade, accurately calculated to match Canvas grading.[^1]
 - 💾 Export your assignments for a course as JSON:
   - Includes your `earned` points, `available` points, if the assignment `countsTowardFinalGrade`, the assignment `title`, the assignment's `group`/category, the `due` date (as number of milliseconds since Unix epoch), the `submitted` date (also the number of milliseconds since Unix epoch), and the assignment's `comments`.
 
