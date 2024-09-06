@@ -252,8 +252,7 @@ function ensureOnCanvasGrades() {
 GM_registerMenuCommand('Export assignments', () => {
 	ensureOnCanvasGrades();
 	exportAndDownloadAssignments(calculate().assignments);
-})
-
+});
 
 const result = calculate();
 
