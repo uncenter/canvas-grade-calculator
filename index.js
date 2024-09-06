@@ -3,7 +3,7 @@
 // @description Calculate grade totals for Canvas courses that have it disabled.
 // @namespace   https://github.com/uncenter/canvas-grade-calculator
 // @match       https://*.instructure.com/courses/*/grades
-// @grant       none
+// @grant       GM_registerMenuCommand
 // @downloadURL https://github.com/uncenter/canvas-grade-calculator/raw/main/index.js
 // @homepageURL https://github.com/uncenter/canvas-grade-calculator
 // @version     0.2.2
@@ -240,21 +240,27 @@ function exportAndDownloadAssignments(assignments) {
 	);
 }
 
-if (!document.querySelector('.ic-app-main-content')) {
-	throw new Error('Not on Canvas!');
-}
-if (!document.querySelector('#grade-summary-content')) {
-	throw new Error('Not on grades page!');
+function ensureOnCanvasGrades() {
+	if (!document.querySelector('.ic-app-main-content')) {
+		throw new Error('Not on Canvas!');
+	}
+	if (!document.querySelector('#grade-summary-content')) {
+		throw new Error('Not on grades page!');
+	}
 }
 
+GM_registerMenuCommand('Export assignments', () => {
+	ensureOnCanvasGrades();
+	exportAndDownloadAssignments(calculate().assignments);
+})
+
+
 const result = calculate();
+
 if (result) {
 	console.log(result);
 	(
 		document.querySelector('#student-grades-final') ||
 		document.querySelector('.student_assignment.final_grade')
 	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${result.grade}%</span></div>`;
-	if (confirm('Export assignments?')) {
-		exportAndDownloadAssignments(result.assignments);
-	}
 }
