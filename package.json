@@ -1,6 +1,6 @@
 {
 	"name": "canvas-grade-calculator",
-	"version": "0.2.2",
+	"version": "0.3.0",
 	"description": "Calculate grade totals and export your assignments data for Canvas courses.",
 	"author": "uncenter <hi@uncenter.dev>",
 	"license": "MIT",
