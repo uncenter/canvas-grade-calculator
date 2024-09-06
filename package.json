@@ -1,7 +1,7 @@
 {
 	"name": "canvas-grade-calculator",
 	"version": "0.2.2",
-	"description": "Calculate grade totals for Canvas courses that have it disabled.",
+	"description": "Calculate grade totals and export your assignments data for Canvas courses.",
 	"author": "uncenter <hi@uncenter.dev>",
 	"license": "MIT",
 	"main": "index.js",
