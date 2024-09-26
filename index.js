@@ -109,37 +109,39 @@ function getAssignments() {
 			assignment.querySelector('.submitted').textContent.trim()
 		);
 
-		const grades = assignment.querySelector(
-			'td.assignment_score > div > span.tooltip > span.grade'
-		);
+		const grades = assignment.querySelector('td.assignment_score span.grade');
 
-		if (
-			grades.querySelector('.graded_icon') ||
-			grades.querySelector('.submission_icon')
-		) {
-			continue;
-		}
+		// Submitted but not yet graded
+		if (grades.querySelector('.submission_icon')) continue;
 
-		const score = [...grades.childNodes]
-			.find(
-				(node) =>
-					node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ''
-			)
-			?.textContent.trim();
-
-		if (
-			score.includes('%') ||
-			!grades.nextElementSibling.textContent.includes('/')
-		) {
-			earned = Number.parseFloat(score.replace('%', ''));
-			available = 100;
-		} else {
-			earned = Number.parseFloat(score);
-			if (typeof earned !== 'number' || Number.isNaN(earned)) continue;
-
-			available = Number.parseFloat(
-				grades.nextElementSibling.textContent.replace('/', '').trim()
+		// Complete or incomplete
+		if (grades.querySelector('.graded_icon')) {
+			earned = Number.parseFloat(
+				assignment.querySelector('.original_points').textContent.trim()
 			);
+			available = earned;
+		} else {
+			const score = [...grades.childNodes]
+				.find(
+					(node) =>
+						node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ''
+				)
+				?.textContent.trim();
+
+			if (
+				score.includes('%') ||
+				!grades.nextElementSibling.textContent.includes('/')
+			) {
+				earned = Number.parseFloat(score.replace('%', ''));
+				available = 100;
+			} else {
+				earned = Number.parseFloat(score);
+				if (typeof earned !== 'number' || Number.isNaN(earned)) continue;
+
+				available = Number.parseFloat(
+					grades.nextElementSibling.textContent.replace('/', '').trim()
+				);
+			}
 		}
 
 		let countsTowardFinalGrade =
@@ -224,9 +226,12 @@ function calculate() {
 		grade = (totalEarned / totalAvailable) * 100;
 	} else {
 		// Weights, so multiply each group's percentage by that group's weight and add to total, while keeping in mind that with some groups lacking assignments not all weights will be used (so use sum of weights given as denominator).
-		for (const group in weights) {
-			grade += (groupPercentages[group] || 100) * weights[group];
+		let totalWeights = 0;
+		for (const group in groupPercentages) {
+			grade += groupPercentages[group] * weights[group];
+			totalWeights += weights[group];
 		}
+		grade = grade / totalWeights;
 	}
 
 	return { grade: grade.toFixed(2), assignments };
