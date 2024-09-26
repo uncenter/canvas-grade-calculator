@@ -2,7 +2,7 @@
 // @name        Canvas Grade Calculator
 // @description Calculate grade totals for Canvas courses that have it disabled.
 // @namespace   https://github.com/uncenter/canvas-grade-calculator
-// @match       https://*.instructure.com/courses/*/grades
+// @match       https://*.instructure.com/courses/*/grades*
 // @grant       GM_registerMenuCommand
 // @downloadURL https://github.com/uncenter/canvas-grade-calculator/raw/main/index.js
 // @homepageURL https://github.com/uncenter/canvas-grade-calculator
