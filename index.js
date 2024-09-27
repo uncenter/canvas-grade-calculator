@@ -6,7 +6,7 @@
 // @grant       GM_registerMenuCommand
 // @downloadURL https://github.com/uncenter/canvas-grade-calculator/raw/main/index.js
 // @homepageURL https://github.com/uncenter/canvas-grade-calculator
-// @version     0.3.0
+// @version     0.3.1
 // @author      uncenter
 // @license     MIT
 // ==/UserScript==
