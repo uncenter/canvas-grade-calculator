@@ -96,11 +96,9 @@ function getAssignments() {
 	for (const assignment of document.querySelectorAll(
 		'#grades_summary tr.assignment_graded.student_assignment'
 	)) {
-		let earned, available, title, group;
-
 		const a = assignment.querySelector('th.title');
-		title = a.querySelector('a').textContent;
-		group = a.querySelector('div.context').textContent;
+		const title = a.querySelector('a').textContent;
+		const group = a.querySelector('div.context').textContent;
 
 		const due = parseCanvasDate(
 			assignment.querySelector('.due').textContent.trim()
@@ -108,7 +106,9 @@ function getAssignments() {
 		const submitted = parseCanvasDate(
 			assignment.querySelector('.submitted').textContent.trim()
 		);
+		const status = assignment.querySelector('.status')?.textContent.trim();
 
+		let earned, available;
 		const grades = assignment.querySelector('td.assignment_score span.grade');
 
 		// Submitted but not yet graded
@@ -178,6 +178,7 @@ function getAssignments() {
 			group,
 			due,
 			submitted,
+			status,
 			comments,
 		});
 	}
