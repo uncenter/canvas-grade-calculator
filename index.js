@@ -3,13 +3,15 @@
 // @description Calculate grade totals for Canvas courses that have it disabled.
 // @namespace   https://github.com/uncenter/canvas-grade-calculator
 // @match       https://*.instructure.com/courses/*/grades
+// @match       http*://*.canvas.*.edu/*
 // @grant       GM_registerMenuCommand
 // @downloadURL https://github.com/uncenter/canvas-grade-calculator/raw/main/index.js
 // @homepageURL https://github.com/uncenter/canvas-grade-calculator
 // @version     0.3.1
-// @author      uncenter
+// @author      uncenter + Liam Wirth
 // @license     MIT
 // ==/UserScript==
+
 
 function parseCanvasDate(input) {
 	if (input === '') return;
@@ -85,7 +87,6 @@ function getWeights() {
 			100;
 		weights[group] = weight;
 	}
-
 	return weights;
 }
 
@@ -181,7 +182,6 @@ function getAssignments() {
 			comments,
 		});
 	}
-
 	return assignments;
 }
 
@@ -210,7 +210,8 @@ function calculate() {
 	const groupPercentages = {};
 	for (const group in totalsPerGroup) {
 		const { totalEarned, totalAvailable } = totalsPerGroup[group];
-		groupPercentages[group] = (totalEarned / totalAvailable) * 100 || undefined;
+//		groupPercentages[group] = (totalEarned / totalAvailable) * 100 || undefined;
+                groupPercentages[group] = totalAvailable ? (totalEarned / totalAvailable) * 100 : 0;
 	}
 
 	let grade = 0;
@@ -262,9 +263,20 @@ GM_registerMenuCommand('Export assignments', () => {
 const result = calculate();
 
 if (result) {
-	console.log(result);
-	(
-		document.querySelector('#student-grades-final') ||
-		document.querySelector('.student_assignment.final_grade')
-	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${result.grade}%</span></div>`;
+  console.log(result);
+  const gradeContainer =
+    document.querySelector('#student-grades-final') ||
+    document.querySelector('.student_assignment.final_grade');
+
+  // Replace the innerHTML with both the grade and a recalc button.
+  gradeContainer.innerHTML = `
+    Total: <span class="grade">${result.grade}%</span>
+    <button id="recalculate-grade" style="margin-left: 10px;">Recalculate What If Grade</button>
+  `;
+
+  // Add an event listener so clicking the button re-runs grade calculation
+  document.getElementById('recalculate-grade').addEventListener('click', () => {
+    const newResult = calculate();
+    gradeContainer.querySelector('.grade').textContent = newResult.grade + '%';
+  });
 }
