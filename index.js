@@ -8,7 +8,7 @@
 // @grant       GM_registerMenuCommand
 // @homepageURL https://github.com/uncenter/canvas-grade-calculator
 // @version     0.3.1
-// @author      uncenter, liam Wirth
+// @author      uncenter, Liam Wirth
 // @license     MIT
 // @downloadURL https://update.greasyfork.org/scripts/479317/Canvas%20Grade%20Calculator.user.js
 // @updateURL https://update.greasyfork.org/scripts/479317/Canvas%20Grade%20Calculator.meta.js
