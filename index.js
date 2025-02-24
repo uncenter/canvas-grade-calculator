@@ -169,14 +169,9 @@ function getAssignments() {
 		}
 
 		// Determine if the assignment counts toward the final grade.
-		let countsTowardFinalGrade = true;
-		const ctfgEl = row.querySelector(
+		let countsTowardFinalGrade = row.querySelector(
 			'[aria-label="This assignment does not count toward the final grade."]'
-		);
-		if (ctfgEl) {
-			countsTowardFinalGrade =
-				ctfgEl.getAttribute('style') === 'visibility: hidden;';
-		}
+		)?.getAttribute('style') === 'visibility: hidden;';
 
 		// Process any comments.
 		const comments = [];
