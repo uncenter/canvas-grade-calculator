@@ -3,11 +3,11 @@
 // @description Calculate grade totals for Canvas courses that have it disabled.
 // @namespace   https://github.com/uncenter/canvas-grade-calculator
 // @match       https://*.instructure.com/courses/*/grades
+// @include     /^https:\/\/canvas\..*\.edu\/courses\/.*\/grades/
 // @grant       GM_registerMenuCommand
-// @downloadURL https://github.com/uncenter/canvas-grade-calculator/raw/main/index.js
 // @homepageURL https://github.com/uncenter/canvas-grade-calculator
 // @version     0.3.1
-// @author      uncenter
+// @author      uncenter, Liam Wirth
 // @license     MIT
 // ==/UserScript==
 
@@ -85,88 +85,113 @@ function getWeights() {
 			100;
 		weights[group] = weight;
 	}
-
 	return weights;
 }
 
 function getAssignments() {
 	const assignments = [];
+	// Use a broader selector to include all assignment rows,
+	// not just those already marked as graded.
 
-	// Scrape assignments table for graded assignments.
-	for (const assignment of document.querySelectorAll(
-		'#grades_summary tr.assignment_graded.student_assignment'
+	for (const assignmentEl of document.querySelectorAll(
+		'#grades_summary tr.student_assignment'
 	)) {
-		let earned, available, title, group;
+		let earned = 0,
+			available = 0,
+			title = '',
+			group = '';
 
-		const a = assignment.querySelector('th.title');
-		title = a.querySelector('a').textContent;
-		group = a.querySelector('div.context').textContent;
+		// Get assignment title and group from the header cell.
+		const titleEl = row.querySelector('th.title');
+		if (!titleEl) continue;
+		title = titleEl.querySelector('a')?.textContent.trim() || '';
+		group = titleEl.querySelector('div.context')?.textContent.trim() || '';
 
-		const due = parseCanvasDate(
-			assignment.querySelector('.due').textContent.trim()
-		);
-		const submitted = parseCanvasDate(
-			assignment.querySelector('.submitted').textContent.trim()
-		);
+		// Parse due and submitted dates.
+		const dueText = row.querySelector('.due')?.textContent.trim() || '';
+		const submittedText =
+			row.querySelector('.submitted')?.textContent.trim() || '';
+		const due = parseCanvasDate(dueText);
+		const submitted = parseCanvasDate(submittedText);
 
-		const grades = assignment.querySelector('td.assignment_score span.grade');
+		// Get the grade container.
+		const gradeEl = row.querySelector('td.assignment_score span.grade');
+		if (!gradeEl) continue;
 
-		// Submitted but not yet graded
-		if (grades.querySelector('.submission_icon')) continue;
-
-		// Complete or incomplete
-		if (grades.querySelector('.graded_icon')) {
-			earned = Number.parseFloat(
-				assignment.querySelector('.original_points').textContent.trim()
-			);
+		// If the grade element shows a graded icon, use the original points.
+		if (gradeEl.querySelector('.graded_icon')) {
+			const op = row.querySelector('.original_points');
+			earned = op ? Number.parseFloat(op.textContent.trim()) : 0;
 			available = earned;
 		} else {
-			const score = [...grades.childNodes]
-				.find(
-					(node) =>
-						node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ''
-				)
-				?.textContent.trim();
+			// For ungraded or "what-if" assignments, try to extract a score text.
+			const textNode = [...gradeEl.childNodes].find(
+				(node) =>
+					node.nodeType === Node.TEXT_NODE && node.textContent.trim() !== ''
+			);
 
-			if (
-				score.includes('%') ||
-				!grades.nextElementSibling.textContent.includes('/')
-			) {
-				earned = Number.parseFloat(score.replace('%', ''));
-				available = 100;
+			if (textNode) {
+				const scoreText = textNode.textContent.trim();
+				// If the score is in percentage format or available points are not parseable,
+				// assume a percentage out of 100.
+				if (
+					scoreText.includes('%') ||
+					!(
+						gradeEl.nextElementSibling &&
+						gradeEl.nextElementSibling.textContent.includes('/')
+					)
+				) {
+					earned = Number.parseFloat(scoreText.replace('%', ''));
+					available = 100;
+				} else {
+					earned = Number.parseFloat(scoreText);
+					if (Number.isNaN(earned)) {
+						// Fallback: attempt to read the what-if score.
+						const wis = row.querySelector('.what_if_score');
+						earned = wis ? Number.parseFloat(wis.textContent.trim()) : 0;
+					}
+					available = gradeEl.nextElementSibling
+						? Number.parseFloat(
+								gradeEl.nextElementSibling.textContent.replace('/', '').trim()
+						  )
+						: 0;
+				}
 			} else {
-				earned = Number.parseFloat(score);
-				if (typeof earned !== 'number' || Number.isNaN(earned)) continue;
-
-				available = Number.parseFloat(
-					grades.nextElementSibling.textContent.replace('/', '').trim()
-				);
+				// If no score text was found, fallback to using the what-if score
+				// (or default to 0).
+				const wis = row.querySelector('.what_if_score');
+				earned = wis ? Number.parseFloat(wis.textContent.trim()) : 0;
+				const op = row.querySelector('.original_points');
+				available = op ? Number.parseFloat(op.textContent.trim()) : 0;
 			}
 		}
 
-		let countsTowardFinalGrade =
-			assignment
-				.querySelector(
-					'[aria-label="This assignment does not count toward the final grade."]'
-				)
-				.getAttribute('style') === 'visibility: hidden;';
+		// Determine if the assignment counts toward the final grade.
+		let countsTowardFinalGrade = row.querySelector(
+			'[aria-label="This assignment does not count toward the final grade."]'
+		)?.getAttribute('style') === 'visibility: hidden;';
 
+		// Process any comments.
 		const comments = [];
-		const table =
-			assignment.nextElementSibling.nextElementSibling.nextElementSibling.querySelector(
-				'td > table > tbody'
-			);
-		if (table) {
-			for (const element of table.querySelectorAll('tr')) {
-				let [comment, details] = element.querySelectorAll('td');
-				let text = comment.querySelector('span').textContent;
-				let [name, ...date] = details.textContent.trim().split(',');
-				date = parseCanvasDate(date.join(',').trim());
-				comments.push({
-					text,
-					name: name.trim(),
-					date,
-				});
+		const commentContainer =
+			row.nextElementSibling &&
+			row.nextElementSibling.nextElementSibling &&
+			row.nextElementSibling.nextElementSibling.nextElementSibling;
+		if (commentContainer) {
+			const commentTable = commentContainer.querySelector('td > table > tbody');
+			if (commentTable) {
+				for (const commentRow of commentTable.querySelectorAll('tr')) {
+					const [commentTd, detailsTd] = commentRow.querySelectorAll('td');
+					const text =
+						commentTd.querySelector('span')?.textContent.trim() || '';
+					let [name, ...dateParts] = detailsTd.textContent.trim().split(',');
+					const date = parseCanvasDate(dateParts.join(',').trim());
+					comments.push({
+						text,
+						name: name.trim(),
+						date,
+					});
+				}
 			}
 		}
 
@@ -181,7 +206,7 @@ function getAssignments() {
 			comments,
 		});
 	}
-
+	console.log(assignments);
 	return assignments;
 }
 
@@ -194,9 +219,17 @@ function calculate() {
 		return;
 	}
 
+	// Filter out assignments where earned or available is not a finite number.
+	const validAssignments = assignments.filter(
+		(a) => Number.isFinite(a.earned) && Number.isFinite(a.available)
+	);
+
+	console.log('These assignments are valid');
+	console.log(validAssignments);
+
 	/* eslint-disable unicorn/prevent-abbreviations, unicorn/no-array-reduce */
-	// Convert assignments array into an object of type { [category]: { totalEarned: number, totalAvailable: number }].
-	const totalsPerGroup = assignments
+	// Build totals per group from only valid assignments.
+	const totalsPerGroup = validAssignments
 		.filter((assignment) => assignment.countsTowardFinalGrade)
 		.reduce((acc, { group, earned, available }) => {
 			acc[group] = acc[group] || { totalEarned: 0, totalAvailable: 0 };
@@ -206,16 +239,18 @@ function calculate() {
 		}, {});
 	/* eslint-enable */
 
-	// Convert available out of total for each group into percentage values.
+	// Calculate each group's percentage.
 	const groupPercentages = {};
 	for (const group in totalsPerGroup) {
 		const { totalEarned, totalAvailable } = totalsPerGroup[group];
-		groupPercentages[group] = (totalEarned / totalAvailable) * 100 || undefined;
+		groupPercentages[group] = totalAvailable
+			? (totalEarned / totalAvailable) * 100
+			: 0;
 	}
 
 	let grade = 0;
 	if (Object.entries(weights).length === 0) {
-		// No weights, so we can just take total earned and available combined from all groups and get the percentage.
+		// No weights: combine all valid assignments.
 		console.log('Assignment groups / categories are not weighted.');
 		let totalAvailable = 0;
 		let totalEarned = 0;
@@ -225,13 +260,19 @@ function calculate() {
 		}
 		grade = (totalEarned / totalAvailable) * 100;
 	} else {
-		// Weights, so multiply each group's percentage by that group's weight and add to total, while keeping in mind that with some groups lacking assignments not all weights will be used (so use sum of weights given as denominator).
+		// With weights, only include groups that have available points.
 		let totalWeights = 0;
-		for (const group in groupPercentages) {
-			grade += groupPercentages[group] * weights[group];
-			totalWeights += weights[group];
+		for (const group in totalsPerGroup) {
+			if (totalsPerGroup[group].totalAvailable > 0) {
+				const groupPercentage =
+					(totalsPerGroup[group].totalEarned /
+						totalsPerGroup[group].totalAvailable) *
+					100;
+				grade += groupPercentage * weights[group];
+				totalWeights += weights[group];
+			}
 		}
-		grade = grade / totalWeights;
+		grade = totalWeights > 0 ? grade / totalWeights : 0;
 	}
 
 	return { grade: grade.toFixed(2), assignments };
@@ -259,12 +300,46 @@ GM_registerMenuCommand('Export assignments', () => {
 	exportAndDownloadAssignments(calculate().assignments);
 });
 
-const result = calculate();
+// Calculate the initial grade and store it as the original grade.
+const initialResult = calculate();
+const originalGrade = initialResult ? initialResult.grade : 'N/A';
 
-if (result) {
-	console.log(result);
-	(
+if (initialResult) {
+	console.log(initialResult);
+	const gradeContainer =
 		document.querySelector('#student-grades-final') ||
-		document.querySelector('.student_assignment.final_grade')
-	).outerHTML = `<div class="student_assignment final_grade">Total: <span class="grade">${result.grade}%</span></div>`;
+		document.querySelector('.student_assignment.final_grade');
+
+	// Initially, just show the total grade.
+	gradeContainer.innerHTML = `
+    <div>Total Grade: <span class="grade">${initialResult.grade}%</span></div>
+    <button id="recalculate-grade" style="margin-top: 5px;">Recalculate What If Grade</button>
+  `;
+
+	// When the user clicks the recalc button, update the grade.
+	document
+		.getElementById('recalculate-grade')
+		.addEventListener('click', function recalcHandler() {
+			// Optionally, if the table may have been updated, you can re-read the assignments:
+			// getAssignments();
+			const newResult = calculate();
+
+			// If the new what-if grade differs from the original, display the original grade line.
+			if (newResult.grade !== originalGrade) {
+				gradeContainer.innerHTML = `
+        <div>"What-If" Grade: <span class="grade">${newResult.grade}%</span></div>
+        <div class="original-grade" style="font-size: 0.8em; color: gray;">Original Grade: ${originalGrade}%</div>
+        <button id="recalculate-grade" style="margin-top: 5px;">Recalculate What If Grade</button>
+      `;
+			} else {
+				gradeContainer.innerHTML = `
+        <div>Total Grade: <span class="grade">${newResult.grade}%</span></div>
+        <button id="recalculate-grade" style="margin-top: 5px;">Recalculate What If Grade</button>
+      `;
+			}
+			// Reattach the event listener since innerHTML has been replaced.
+			document
+				.getElementById('recalculate-grade')
+				.addEventListener('click', recalcHandler);
+		});
 }
