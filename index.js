@@ -92,9 +92,6 @@ function getAssignments() {
 	const assignments = [];
 	// Use a broader selector to include all assignment rows,
 	// not just those already marked as graded.
-	const assignmentRows = document.querySelectorAll(
-		'#grades_summary tr.student_assignment'
-	);
 
 	for (const row of assignmentRows) {
 		let earned = 0,
