@@ -85,7 +85,6 @@ function getWeights() {
 			100;
 		weights[group] = weight;
 	}
-	console.log(weights);
 	return weights;
 }
 
