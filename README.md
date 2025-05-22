@@ -1,3 +1,10 @@
+<div align="center">
+	<h1>🚧 ARCHIVED 🚧</h1>
+	<h3>I no longer use Canvas LMS. Might still work :)</h3>
+</div>
+
+---
+
 # Canvas Grade Calculator
 
 Calculate grade totals and export your assignments data for Canvas courses.
